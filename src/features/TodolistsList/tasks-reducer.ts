@@ -3,6 +3,8 @@ import {TaskPriorities, TaskStatuses, TaskType, todolistsAPI, UpdateTaskModelTyp
 import {Dispatch} from 'redux'
 import {AppRootStateType} from '../../app/store'
 import {AppActionsType, setAppErrorAC, setAppStatusAC} from "../../app/app-reducer";
+import {AxiosError} from "axios";
+import {handleAppError, handleNetworkError} from "../../utils/error-utils";
 
 const initialState: TasksStateType = {}
 
@@ -72,6 +74,13 @@ export const removeTaskTC = (taskId: string, todolistId: string) => {
             })
     }
 }
+
+enum ResultCode {
+    success = 0,
+    error = 1,
+    captcha = 10
+}
+
 export const addTaskTC = (title: string, todolistId: string) => {
     return (dispatch: Dispatch<ActionsType>) => {
         dispatch(setAppStatusAC('loading'))
@@ -81,13 +90,19 @@ export const addTaskTC = (title: string, todolistId: string) => {
                     dispatch(addTaskAC(res.data.data.item))
                     dispatch(setAppStatusAC('succeeded'))
                 } else {
-                    dispatch(setAppErrorAC(res.data.messages.length
-                        ? res.data.messages[0]
-                        : 'Some error occurred'))
-                    dispatch(setAppStatusAC('failed'))
-
+                    // dispatch(setAppErrorAC(res.data.messages.length
+                    //     ? res.data.messages[0]
+                    //     : 'Some error occurred'))
+                    // dispatch(setAppStatusAC('failed'))
+                    handleAppError(dispatch, res.data)
                 }
-
+            })
+            .catch((err: AxiosError) => {
+                /*                dispatch(setAppErrorAC(err.message))
+                                dispatch(setAppStatusAC('failed'))
+                            })
+                */
+                handleNetworkError(dispatch, err.message)
             })
     }
 }

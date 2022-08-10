@@ -1,6 +1,8 @@
 import {todolistsAPI, TodolistType} from '../../api/todolists-api'
 import {Dispatch} from 'redux'
 import {AppActionsType, RequestStatusType, setAppErrorAC, setAppStatusAC} from "../../app/app-reducer";
+import {AxiosError} from "axios";
+import {handleAppError, handleNetworkError} from "../../utils/error-utils";
 
 const initialState: Array<TodolistDomainType> = []
 
@@ -17,7 +19,9 @@ export const todolistsReducer = (state: Array<TodolistDomainType> = initialState
         case 'SET-TODOLISTS':
             return action.todolists.map(tl => ({...tl, filter: 'all', entityStatus: "idle"}))
         case 'TODOLIST/CHANGE-ENTITY-STATUS':
-            return state.map(tl => tl.id === action.id ? {...tl, entityStatus: action.status} : tl)
+            return state.map(tl => tl.id === action.id
+                ? {...tl, entityStatus: 'loading'}
+                : tl)
 
         default:
             return state
@@ -80,11 +84,17 @@ export const addTodolistTC = (title: string) => {
                     dispatch(addTodolistAC(res.data.data.item))
                     dispatch(setAppStatusAC('succeeded'))
                 } else {
-                    dispatch(setAppErrorAC(res.data.messages.length
-                        ? res.data.messages[0]
-                        : 'Some error occurred'))
-                    dispatch(setAppStatusAC('failed'))
+                    // dispatch(setAppErrorAC(res.data.messages.length
+                    //     ? res.data.messages[0]
+                    //     : 'Some error occurred'))
+                    // dispatch(setAppStatusAC('failed'))
+                    handleAppError(dispatch, res.data)
                 }
+            })
+            .catch((err: AxiosError) => {
+                // dispatch(setAppErrorAC(err.message))
+                // dispatch(setAppStatusAC('failed'))
+                handleNetworkError(dispatch, err.message)
             })
     }
 }
